@@ -20,7 +20,7 @@ export function MobileStickyCTA() {
   }, []);
   if (!visible || dismissed) return null;
   return <aside className="sticky-cta md:hidden" aria-label="Quick purchase">
-    <div className="min-w-0"><strong>WINTER ARC 92</strong><span>₹49 <s>₹199</s></span></div>
+    <div className="min-w-0"><strong>WINTER ARC TRACKER</strong><span>₹49 <s>₹199</s></span></div>
     <PurchaseButton label="GET IT NOW" location="mobile-sticky" className="!min-h-10 !px-4 !text-[11px]" />
     <button type="button" className="sticky-close" aria-label="Close quick purchase bar" onClick={() => setDismissed(true)}>×</button>
   </aside>;
