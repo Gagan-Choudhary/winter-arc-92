@@ -7,6 +7,20 @@ export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   if (!privateStoreReady() || !mailReady() || !process.env.ENTITLEMENT_HASH_SECRET) {
+    // Log names only; never log credentials, buyer input, or the OIDC token.
+    const missing = [
+      !process.env.BLOB_STORE_ID && "BLOB_STORE_ID",
+      !process.env.VERCEL_OIDC_TOKEN && "VERCEL_OIDC_TOKEN",
+      !process.env.RESEND_API_KEY && "RESEND_API_KEY",
+      !process.env.DOWNLOAD_FROM_EMAIL && "DOWNLOAD_FROM_EMAIL",
+      !process.env.ACCESS_TOKEN_SECRET && "ACCESS_TOKEN_SECRET",
+      !process.env.ENTITLEMENT_HASH_SECRET && "ENTITLEMENT_HASH_SECRET",
+    ].filter(Boolean);
+    try {
+      const site = new URL(process.env.SITE_URL || "");
+      if (site.protocol !== "https:" && !(process.env.NODE_ENV === "development" && site.hostname === "localhost")) missing.push("SITE_URL (HTTPS required)");
+    } catch { missing.push("SITE_URL (invalid or absent)"); }
+    console.error("Checkout configuration unavailable; missing:", missing.join(", "));
     return NextResponse.json({ error: "Checkout is temporarily unavailable" }, { status: 503 });
   }
   if (Number(request.headers.get("content-length") || 0) > 4096) {
