@@ -1,0 +1,1 @@
+﻿These are the supplied Winter Arc 92 product screenshots from `G:\Projects\WinterArCImages`. They are displayed with CSS crops in the landing page. Tapping or clicking a preview opens its full-size original.
