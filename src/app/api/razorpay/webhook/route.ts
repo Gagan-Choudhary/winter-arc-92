@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendOptionalDownloadEmail } from "@/lib/delivery";
+import { createAndSendMagicLink, mailReady } from "@/lib/mail";
 import { verifyWebhookSignature } from "@/lib/payment-security";
-import { getPaidReceipt, privateStoreReady, savePaidReceipt } from "@/lib/payment-store";
+import { getPaidReceipt, getPurchaseByLink, privateStoreReady, saveEntitlement, savePaidReceipt, savePurchase } from "@/lib/payment-store";
+import { matchesPaidPurchase } from "@/lib/payment-validation";
 
 export const runtime = "nodejs";
 
@@ -9,11 +10,7 @@ type Entity = Record<string, unknown>;
 
 export async function POST(request: NextRequest) {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
-  const expectedLinkId = process.env.RAZORPAY_PAYMENT_LINK_ID;
-  if (!secret || !expectedLinkId || !privateStoreReady()) {
-    return NextResponse.json({ error: "Payment delivery is not configured" }, { status: 503 });
-  }
-
+  if (!secret || !privateStoreReady()) return NextResponse.json({ error: "Payment delivery is not configured" }, { status: 503 });
   const body = await request.text();
   if (Buffer.byteLength(body) > 128_000) return NextResponse.json({ error: "Payload too large" }, { status: 413 });
   if (!verifyWebhookSignature(body, request.headers.get("x-razorpay-signature") || "", secret)) {
@@ -28,25 +25,27 @@ export async function POST(request: NextRequest) {
   const payload = event.payload as Entity | undefined;
   const link = (payload?.payment_link as Entity | undefined)?.entity as Entity | undefined;
   const payment = (payload?.payment as Entity | undefined)?.entity as Entity | undefined;
-  // Razorpay webhooks are account-wide. A valid event for another product is not an error.
-  if (link?.id !== expectedLinkId) return NextResponse.json({ received: true });
-  if (
-    link.status !== "paid" || link.currency !== "INR" ||
-    link.amount !== 4900 || link.amount_paid !== 4900 || link.accept_partial === true ||
-    typeof payment?.id !== "string" || !/^pay_[A-Za-z0-9]+$/.test(payment.id) ||
-    payment.status !== "captured" || payment.captured !== true ||
-    payment.amount !== 4900 || payment.currency !== "INR"
-  ) {
-    return NextResponse.json({ error: "Payment does not match this product" }, { status: 422 });
+  if (typeof link?.id !== "string" || typeof payment?.id !== "string" || !/^pay_[A-Za-z0-9]+$/.test(payment.id)) {
+    return NextResponse.json({ error: "Invalid payment payload" }, { status: 422 });
   }
 
   try {
+    const purchase = await getPurchaseByLink(link.id);
+    // Account-wide webhooks can include unrelated products.
+    if (!purchase) return NextResponse.json({ received: true });
+    if (!matchesPaidPurchase(purchase, link, payment)) {
+      return NextResponse.json({ error: "Payment does not match this purchase" }, { status: 422 });
+    }
     const existing = await getPaidReceipt(payment.id);
     if (existing) return NextResponse.json({ received: true });
-    await savePaidReceipt({ paymentId: payment.id, paymentLinkId: expectedLinkId, paidAt: Date.now() });
-    const customer = link.customer as Entity | undefined;
-    try { await sendOptionalDownloadEmail(payment.id, customer?.email || payment.email); }
-    catch (error) { console.error("Optional download email failed", error); }
+    const paid = { ...purchase, status: "paid" as const, paymentId: payment.id, purchasedAt: Date.now() };
+    await savePurchase(paid);
+    await saveEntitlement(paid);
+    await savePaidReceipt(paid);
+    if (mailReady()) {
+      try { await createAndSendMagicLink(paid.email, paid.emailKey, "delivery", paid.phone, paid.purchaseId); }
+      catch (error) { console.error("Paid delivery email failed", error); }
+    }
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error("Unable to record verified payment", error);
