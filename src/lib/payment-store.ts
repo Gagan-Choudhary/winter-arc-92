@@ -47,7 +47,9 @@ async function writeJson(pathname: string, value: unknown): Promise<void> {
 }
 
 export function privateStoreReady(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+  // A connected Vercel Blob store supplies both values. The SDK uses them
+  // automatically for OIDC authentication; no static Blob token is needed.
+  return Boolean(process.env.BLOB_STORE_ID && process.env.VERCEL_OIDC_TOKEN);
 }
 
 export async function getIntent(nonce: string): Promise<MagicIntent | null> {

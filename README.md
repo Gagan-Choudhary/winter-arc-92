@@ -5,7 +5,7 @@ Next.js 15, TypeScript, and Tailwind CSS landing page based on the supplied visu
 ## Run locally
 
 1. Run `npm.cmd install` in this folder.
-2. Copy `.env.example` to `.env.local`.
+2. Copy `.env.example` to `.env.local`. For Blob access, connect the private store to the Development environment and run `vercel env pull` while logged in with the Vercel CLI. This supplies `BLOB_STORE_ID` and an OIDC token; the SDK refreshes local tokens using your CLI credentials.
 3. Run `npm.cmd run dev` and open the local URL shown in the terminal.
 4. Run `npm.cmd run typecheck` and `npm.cmd run build` before deployment.
 
@@ -30,7 +30,7 @@ A reusable `winterarc:purchase-click` browser event is dispatched with a `locati
 
 ## Deploy to Vercel
 
-Import this folder as a Next.js project. Add the server-side variables in `.env.example`, connect a **private** Vercel Blob store, upload the product ZIP, and deploy. Keep Test Mode keys and Live Mode keys in separate Vercel environments.
+Import this folder as a Next.js project. Add the server-side variables in `.env.example`, connect the existing **private** Vercel Blob store to the project for **Production**, upload the product ZIP to that store, and deploy. Confirm `BLOB_STORE_ID` points to that store in the Production environment; Vercel supplies and rotates `VERCEL_OIDC_TOKEN` for Functions. Keep Test Mode keys and Live Mode keys in separate Vercel environments.
 
 ## Secure payment and download delivery
 
@@ -38,7 +38,7 @@ The ZIP is **not** kept in `public` or Git. Upload `Winter_Arc_92_Product.zip` f
 
 The same private store holds `purchase-intents/<nonce>.json`, `purchases/by-link/<plink>.json`, `payments/by-id/<pay>.json`, and `entitlements/by-email/<HMAC(email)>.json`. Reads bypass Blob's cache after overwrites. Only a verified, captured `payment_link.paid` event for a server-created ₹49 link writes a paid entitlement. No email address appears in a Blob pathname or public URL, and no card credentials are stored.
 
-Set `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` from the selected Razorpay mode. Set `RAZORPAY_WEBHOOK_SECRET` to the separate secret chosen when registering `https://winterarctracker.vercel.app/api/razorpay/webhook`; enable **`payment_link.paid`**. Set the exact callback to `https://winterarctracker.vercel.app/success` for production. Generate distinct random values for `ENTITLEMENT_HASH_SECRET`, `ACCESS_TOKEN_SECRET`, and `DOWNLOAD_SIGNING_SECRET` (for example, `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` three times). Connect the private Blob store to obtain `BLOB_READ_WRITE_TOKEN`. Configure a verified Resend sender in `DOWNLOAD_FROM_EMAIL` and set `RESEND_API_KEY`; email verification is required before checkout or recovery.
+Set `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` from the selected Razorpay mode. Set `RAZORPAY_WEBHOOK_SECRET` to the separate secret chosen when registering `https://winterarctracker.vercel.app/api/razorpay/webhook`; enable **`payment_link.paid`**. Set the exact callback to `https://winterarctracker.vercel.app/success` for production. Generate distinct random values for `ENTITLEMENT_HASH_SECRET`, `ACCESS_TOKEN_SECRET`, and `DOWNLOAD_SIGNING_SECRET` (for example, `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` three times). The private Blob SDK uses the project connection's `BLOB_STORE_ID` and rotating `VERCEL_OIDC_TOKEN`; no static Blob read-write token is required. Configure a verified Resend sender in `DOWNLOAD_FROM_EMAIL` and set `RESEND_API_KEY`; email verification is required before checkout or recovery.
 
 Keep `ENTITLEMENT_HASH_SECRET` stable across deployments. Changing it requires migrating the email-keyed entitlement index, or returning customers will not be found. Existing receipts from the old shared Payment Link did not record buyer email and cannot be matched automatically; migrate any real buyers before removing their old access path.
 
