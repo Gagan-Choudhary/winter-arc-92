@@ -1,9 +1,15 @@
 export type CheckoutMode = "purchase" | "recover";
 
+function validSender(value: string | undefined): boolean {
+  if (!value) return false;
+  const address = value.includes("<") ? /^(?:[^<>\r\n]+)\s<([^<>\s]+)>$/.exec(value)?.[1] : value;
+  return Boolean(address && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(address));
+}
+
 export function mailConfigurationIssues(env: NodeJS.ProcessEnv = process.env): string[] {
   const missing = [
     !env.RESEND_API_KEY && "RESEND_API_KEY",
-    !env.DOWNLOAD_FROM_EMAIL && "DOWNLOAD_FROM_EMAIL",
+    !validSender(env.DOWNLOAD_FROM_EMAIL) && "DOWNLOAD_FROM_EMAIL (invalid or absent)",
     !env.ACCESS_TOKEN_SECRET && "ACCESS_TOKEN_SECRET",
   ].filter((value): value is string => Boolean(value));
 

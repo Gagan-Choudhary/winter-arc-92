@@ -16,6 +16,7 @@ export type PurchaseRecord = {
   createdAt: number;
   paymentId?: string;
   purchasedAt?: number;
+  emailSentAt?: number;
 };
 
 export type MagicIntent = {

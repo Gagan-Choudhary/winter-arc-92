@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAndSendMagicLink, mailReady } from "@/lib/mail";
+import { mailReady, sendPurchaseConfirmationEmail } from "@/lib/mail";
+import { mailConfigurationIssues } from "@/lib/checkout-config";
 import { verifyWebhookSignature } from "@/lib/payment-security";
 import { getPaidReceipt, getPurchaseByLink, privateStoreReady, saveEntitlement, savePaidReceipt, savePurchase } from "@/lib/payment-store";
 import { matchesPaidPurchase } from "@/lib/payment-validation";
@@ -42,13 +43,18 @@ export async function POST(request: NextRequest) {
     await savePurchase(paid);
     await saveEntitlement(paid);
     await savePaidReceipt(paid);
+    // Receipt and entitlement are durable before email; email failure never undoes payment.
     if (mailReady()) {
-      try { await createAndSendMagicLink(paid.email, paid.emailKey, "delivery", paid.phone, paid.purchaseId); }
-      catch (error) { console.error("Paid delivery email failed", error); }
+      try {
+        await sendPurchaseConfirmationEmail(paid.email, paid.emailKey, payment.id);
+        await savePaidReceipt({ ...paid, emailSentAt: Date.now() });
+      } catch { console.error("Purchase confirmation email failed", { resendCallSucceeded: false }); }
+    } else {
+      console.error("Purchase confirmation email unavailable; issues:", mailConfigurationIssues().join(", "));
     }
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error("Unable to record verified payment", error);
+    console.error("Unable to record verified payment", { errorName: error instanceof Error ? error.name : "UnknownError" });
     return NextResponse.json({ error: "Unable to record payment" }, { status: 503 });
   }
 }

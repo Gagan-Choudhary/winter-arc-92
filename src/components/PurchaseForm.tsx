@@ -30,10 +30,10 @@ export function PurchaseForm({ mode, status }: { mode: "purchase" | "recover"; s
     setBusy(true);
     try {
       if (mode === "purchase") attemptRef.current ||= crypto.randomUUID();
-      const response = await fetch("/api/purchase-intent", {
+      const response = await fetch(mode === "recover" ? "/api/recover-access" : "/api/purchase-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail, phone: normalizedPhone, mode, ...(mode === "purchase" ? { attemptId: attemptRef.current } : {}) }),
+        body: JSON.stringify(mode === "recover" ? { email: normalizedEmail } : { email: normalizedEmail, phone: normalizedPhone, attemptId: attemptRef.current }),
       });
       const result = await response.json() as { error?: string; field?: "email" | "phone"; checkoutUrl?: string };
       if (!response.ok) {

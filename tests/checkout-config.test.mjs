@@ -15,8 +15,20 @@ const readyPurchase = {
 test("new checkout does not require mail or access-token configuration", () => {
   assert.deepEqual(checkoutConfigurationIssues("purchase", readyPurchase), []);
   assert.deepEqual(checkoutConfigurationIssues("recover", readyPurchase), [
-    "RESEND_API_KEY", "DOWNLOAD_FROM_EMAIL", "ACCESS_TOKEN_SECRET", "SITE_URL (invalid or absent)",
+    "RESEND_API_KEY", "DOWNLOAD_FROM_EMAIL (invalid or absent)", "ACCESS_TOKEN_SECRET", "SITE_URL (invalid or absent)",
   ]);
+});
+
+test("recovery accepts a named sender and rejects a malformed address", () => {
+  const readyRecovery = {
+    ...readyPurchase,
+    RESEND_API_KEY: "test-key",
+    DOWNLOAD_FROM_EMAIL: "Winter Arc 92 <support@example.com>",
+    ACCESS_TOKEN_SECRET: "access-secret",
+    SITE_URL: "https://winterarctracker.vercel.app",
+  };
+  assert.deepEqual(checkoutConfigurationIssues("recover", readyRecovery), []);
+  assert.deepEqual(checkoutConfigurationIssues("recover", { ...readyRecovery, DOWNLOAD_FROM_EMAIL: "Winter Arc 92" }), ["DOWNLOAD_FROM_EMAIL (invalid or absent)"]);
 });
 
 test("new checkout requires payment, private storage, and delivery configuration", () => {
