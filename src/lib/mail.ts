@@ -1,14 +1,9 @@
 import { createAccessToken, newNonce } from "@/lib/customer-auth";
+import { mailConfigurationIssues } from "@/lib/checkout-config";
 import { MagicIntent, saveIntent } from "@/lib/payment-store";
 
 export function mailReady(): boolean {
-  try {
-    const site = new URL(process.env.SITE_URL || "");
-    return Boolean(
-      process.env.RESEND_API_KEY && process.env.DOWNLOAD_FROM_EMAIL && process.env.ACCESS_TOKEN_SECRET &&
-      (site.protocol === "https:" || (process.env.NODE_ENV === "development" && site.hostname === "localhost")),
-    );
-  } catch { return false; }
+  return mailConfigurationIssues().length === 0;
 }
 
 async function sendMail(email: string, subject: string, text: string, url: string, idempotencyKey: string, buttonText: string, recoveryUrl?: string): Promise<void> {
