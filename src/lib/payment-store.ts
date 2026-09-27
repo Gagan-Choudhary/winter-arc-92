@@ -30,6 +30,7 @@ export type MagicIntent = {
 
 const paymentIdPattern = /^pay_[A-Za-z0-9]+$/;
 const linkIdPattern = /^plink_[A-Za-z0-9]+$/;
+const purchaseIdPattern = /^wa92_[a-f0-9]{32}$/;
 const emailKeyPattern = /^[a-f0-9]{64}$/;
 
 async function readJson<T>(pathname: string): Promise<T | null> {
@@ -67,8 +68,15 @@ export async function getPurchaseByLink(paymentLinkId: string): Promise<Purchase
 }
 
 export async function savePurchase(record: PurchaseRecord): Promise<void> {
-  if (!linkIdPattern.test(record.paymentLinkId)) throw new Error("Invalid link ID");
+  if (!linkIdPattern.test(record.paymentLinkId) || !purchaseIdPattern.test(record.purchaseId)) throw new Error("Invalid purchase record");
   await writeJson(`purchases/by-link/${record.paymentLinkId}.json`, record);
+  await writeJson(`purchases/by-reference/${record.purchaseId}.json`, record);
+}
+
+export async function getPurchaseByReference(purchaseId: string): Promise<PurchaseRecord | null> {
+  if (!purchaseIdPattern.test(purchaseId)) return null;
+  const record = await readJson<PurchaseRecord>(`purchases/by-reference/${purchaseId}.json`);
+  return record?.purchaseId === purchaseId && record.productId === PRODUCT_ID ? record : null;
 }
 
 export async function getEntitlement(key: string): Promise<PurchaseRecord | null> {

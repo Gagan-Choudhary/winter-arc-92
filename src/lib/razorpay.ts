@@ -3,11 +3,12 @@ import { PRODUCT_PRICE_PAISE } from "@/lib/payment-store";
 
 export type NewPaymentLink = { id: string; shortUrl: string; purchaseId: string };
 
-export async function createPaymentLink(email: string, phone?: string): Promise<NewPaymentLink> {
+export async function createPaymentLink(email: string, phone?: string, referenceId?: string): Promise<NewPaymentLink> {
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
   if (!keyId || !keySecret) throw new Error("Razorpay API credentials are not configured");
-  const purchaseId = `wa92_${randomUUID().replace(/-/g, "")}`;
+  const purchaseId = referenceId || `wa92_${randomUUID().replace(/-/g, "")}`;
+  if (!/^wa92_[a-f0-9]{32}$/.test(purchaseId)) throw new Error("Invalid purchase reference");
   const callback = process.env.RAZORPAY_CALLBACK_URL || "https://winterarctracker.vercel.app/success";
   const body = {
     amount: PRODUCT_PRICE_PAISE,

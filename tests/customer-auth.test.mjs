@@ -1,17 +1,34 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createAccessToken, emailKey, normalizeEmail, normalizePhone, verifyAccessToken } from "../src/lib/customer-auth.ts";
+import { createAccessToken, emailKey, verifyAccessToken } from "../src/lib/customer-auth.ts";
+import { normalizeEmail, normalizePhone, purchaseIdFromAttempt } from "../src/lib/customer-input.ts";
 
 const secret = "test-access-token-secret-0123456789";
 
 test("buyer identity is normalized and validated before storage", () => {
   assert.equal(normalizeEmail("  Customer+One@Example.COM  "), "customer+one@example.com");
+  assert.equal(normalizeEmail(""), null);
   assert.equal(normalizeEmail("not an email"), null);
   assert.equal(normalizeEmail("a@bad..example"), null);
   assert.equal(normalizeEmail("a@bad-.example"), null);
   assert.equal(normalizePhone(""), "");
+  assert.equal(normalizePhone("  "), "");
+  assert.equal(normalizePhone("9876543210"), "+919876543210");
+  assert.equal(normalizePhone("919876543210"), "+919876543210");
   assert.equal(normalizePhone("+91 98765 43210"), "+919876543210");
   assert.equal(normalizePhone("call me"), null);
+  assert.equal(normalizePhone("1234567890"), null);
+  assert.equal(normalizePhone("+9876543210"), null);
+  assert.equal(normalizePhone("9999999999"), null);
+  assert.equal(normalizePhone("987654321"), null);
+  assert.equal(normalizePhone("+9198765432100"), null);
+});
+
+test("a checkout retry keeps one Razorpay reference ID", () => {
+  const attempt = "36e4e038-8a36-4d28-a674-33c2ea7240ee";
+  assert.equal(purchaseIdFromAttempt(attempt), "wa92_36e4e0388a364d28a67433c2ea7240ee");
+  assert.equal(purchaseIdFromAttempt(attempt), purchaseIdFromAttempt(attempt));
+  assert.equal(purchaseIdFromAttempt("not-a-uuid"), null);
 });
 
 test("storage key hides the email and is keyed", () => {

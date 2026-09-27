@@ -1,24 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-export function normalizeEmail(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const email = value.trim().toLowerCase();
-  if (email.length > 254 || !/^[^\s@]{1,64}@[a-z0-9.-]+$/.test(email)) return null;
-  const [local, domain] = email.split("@");
-  if (local.includes("..") || local.startsWith(".") || local.endsWith(".")) return null;
-  const labels = domain.split(".");
-  if (labels.length < 2 || labels.some((label) => !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label))) return null;
-  if (labels.at(-1)!.length < 2) return null;
-  return email;
-}
-
-export function normalizePhone(value: unknown): string | null {
-  if (value === undefined || value === null || value === "") return "";
-  if (typeof value !== "string") return null;
-  const phone = value.trim().replace(/[\s()-]/g, "");
-  return /^\+?[0-9]{8,15}$/.test(phone) ? phone : null;
-}
-
 export function emailKey(email: string, secret: string): string {
   if (!secret) throw new Error("Missing entitlement hash secret");
   return createHmac("sha256", secret).update(email).digest("hex");
