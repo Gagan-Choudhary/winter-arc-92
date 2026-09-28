@@ -108,3 +108,12 @@ a.purchase-button:hover { transform: translateY(-2px); box-shadow: 0 12px 32px r
 .form-message { margin: 4px 0 10px; color: #fbbf24; font-size: 12px; line-height: 1.5; }
 .access-email { margin: -10px 0 28px; color: #a1a1aa; font-size: 12px; overflow-wrap: anywhere; }
 .access-email strong { color: #e4e4e7; }
+.product-downloads { width: min(100%, 380px); margin-inline: auto; }
+.individual-downloads-label { margin: 24px 0 12px; color: #a1a1aa; font-size: 12px; }
+.individual-downloads { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 0; margin: 0; list-style: none; text-align: left; }
+.individual-downloads a { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 50px; height: 100%; padding: 12px; border: 1px solid #30343d; border-radius: 8px; background: #131419; color: #e4e4e7; font-size: 12px; line-height: 1.35; text-decoration: none; }
+.individual-downloads a:hover { border-color: #38bdf8; background: #18212a; }
+.product-downloads a:focus-visible { outline: 2px solid #38bdf8; outline-offset: 4px; }
+.download-format { display: inline-flex; align-items: center; gap: 5px; color: #a1a1aa; font: 9px monospace; white-space: nowrap; }
+.download-format > span { color: #38bdf8; font-size: 16px; }
+@media (max-width: 420px) { .individual-downloads { grid-template-columns: 1fr; } }

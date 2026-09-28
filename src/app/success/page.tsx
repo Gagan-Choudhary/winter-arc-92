@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ProductDownloads } from "@/components/ProductDownloads";
 
 type State = "checking" | "paid" | "pending" | "invalid" | "expired" | "unavailable";
 
@@ -46,8 +47,8 @@ export default function SuccessPage() {
       <h1>Payment Successful</h1>
       <p className="success-subtitle">Your Winter Arc starts now.</p>
       <p className="access-email">Purchase linked to: <strong>{email}</strong></p>
-      <a className="purchase-button" href={downloadUrl}>DOWNLOAD WINTER ARC 92 <span aria-hidden="true">↗</span></a>
-      <p className="success-note">This download link expires in 15 minutes. You can request a fresh link by email whenever you need it.</p>
+      <ProductDownloads downloadUrl={downloadUrl} />
+      <p className="success-note">These download links expire in 15 minutes. You can request fresh access by email whenever you need it.</p>
     </> : <>
       <p className="eyebrow">WINTER ARC TRACKER</p>
       <h1>{state === "checking" || state === "pending" ? "Confirming your payment" : state === "expired" ? "Download access expired" : state === "invalid" ? "Payment could not be verified" : "Download is temporarily unavailable"}</h1>
