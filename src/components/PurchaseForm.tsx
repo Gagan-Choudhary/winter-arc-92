@@ -2,6 +2,7 @@
 
 import { FormEvent, useRef, useState } from "react";
 import { normalizeEmail, normalizePhone } from "@/lib/customer-input";
+import { trackInitiateCheckout } from "@/lib/meta-pixel";
 
 export function PurchaseForm({ mode, status }: { mode: "purchase" | "recover"; status?: string }) {
   const [email, setEmail] = useState("");
@@ -43,6 +44,7 @@ export function PurchaseForm({ mode, status }: { mode: "purchase" | "recover"; s
       }
       if (mode === "purchase") {
         if (!result.checkoutUrl) throw new Error("Checkout could not be opened. Please try again.");
+        trackInitiateCheckout();
         window.location.assign(result.checkoutUrl);
         return;
       }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ProductDownloads } from "@/components/ProductDownloads";
+import { trackPurchase } from "@/lib/meta-pixel";
 
 type State = "checking" | "paid" | "pending" | "invalid" | "expired" | "unavailable";
 
@@ -19,9 +20,10 @@ export default function SuccessPage() {
     async function check() {
       try {
         const response = await fetch(`/api/payment-status${query}`, { cache: "no-store" });
-        const result = await response.json() as { state?: State; downloadUrl?: string; email?: string };
+        const result = await response.json() as { state?: State; downloadUrl?: string; email?: string; paymentId?: string };
         if (cancelled) return;
-        if (result.state === "paid" && result.downloadUrl) {
+        if (response.ok && result.state === "paid" && result.downloadUrl && result.paymentId) {
+          trackPurchase(result.paymentId);
           setDownloadUrl(result.downloadUrl);
           setEmail(result.email || "");
           setState("paid");

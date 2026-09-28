@@ -1,4 +1,4 @@
-﻿# Winter Arc 92 landing page
+# Winter Arc 92 landing page
 
 Next.js 15, TypeScript, and Tailwind CSS landing page based on the supplied visual references.
 
@@ -26,7 +26,7 @@ All purchase buttons open `/purchase`. A new buyer enters an email and optionall
 
 Set `NEXT_PUBLIC_SITE_URL` and `SITE_URL` to the published HTTPS origin. `RAZORPAY_CALLBACK_URL` defaults to `https://winterarctracker.vercel.app/success` and can be overridden for preview testing.
 
-A reusable `winterarc:purchase-click` browser event is dispatched with a `location` detail from each checkout link. Connect Meta Pixel, Google Analytics, and purchase tracking when real IDs and checkout confirmation details are available. No IDs or payment secrets are included.
+Set `NEXT_PUBLIC_META_PIXEL_ID` to enable Meta Pixel. PageView runs on navigation, ViewContent on the product landing page, and InitiateCheckout only after the server returns a valid Razorpay checkout URL. Purchase runs only after `/api/payment-status` verifies the Razorpay return, paid receipt, and entitlement. The verified payment ID deduplicates Purchase across refreshes in browser storage. The Pixel ID is public; payment and Blob secrets remain server-side.
 
 ## Deploy to Vercel
 
